@@ -347,14 +347,23 @@
 <script>
 
 // MÀU SẮC THEO LOẠI ĐẤT
+// Đất ONT (đất ở) — tông đỏ đậm, dễ nhận biết
+// Đất CLN, HNK (cây lâu năm, hàng năm) — tông xanh trong, để lộ nền vệ tinh
 const LAND_COLORS = {
-    'ONT':'#e8524a','ONT+CLN':'#f0866e','ONT+CLN+NTS':'#ff8a65','ONT+CLN+RSX':'#ef5350',
-    'ONT+CLN+NKH':'#ff7043','ONT+RSX':'#e57373','ONT+CLN+BHK':'#ffa07a','ONT+CLN+HNK':'#ffab91','ONT+NTS':'#ff8a65',
-    'CLN':'#66bb6a','CLN+NTS':'#81c784','CLN+RSX':'#4caf50',
-    'RSX':'#2e7d32','HNK':'#a5d6a7','BHK':'#9ccc65','LUK':'#aed581','LUC':'#c5e1a5',
-    'NKH':'#dce775','NKH+NTS':'#cddc39','NKH+RSX':'#9e9d24','HNK+NTS':'#9ccc65',
+    // === Đất ở (ONT) — ĐỎ RÕ ===
+    'ONT':'#d32f2f','ONT+CLN':'#e53935','ONT+CLN+NTS':'#ef5350','ONT+CLN+RSX':'#c62828',
+    'ONT+CLN+NKH':'#e64a19','ONT+RSX':'#b71c1c','ONT+CLN+BHK':'#d84315',
+    'ONT+CLN+HNK':'#bf360c','ONT+NTS':'#f4511e',
+    // === Cây lâu năm (CLN) — XANH TRONG ===
+    'CLN':'#7cb342','CLN+NTS':'#9ccc65','CLN+RSX':'#558b2f',
+    // === Đất rừng, cây hàng năm — XANH lá khác ===
+    'RSX':'#2e7d32','HNK':'#aed581','BHK':'#c5e1a5','LUK':'#dce775','LUC':'#cddc39',
+    'NKH':'#9e9d24','NKH+NTS':'#827717','NKH+RSX':'#558b2f','HNK+NTS':'#8bc34a',
+    // === Mặt nước, thủy sản — XANH NƯỚC ===
     'NTS':'#29b6f6','NTS+HNK':'#4fc3f7','NTS+BHK':'#81d4fa','NTS+CLN':'#80deea',
-    'DGT':'#bdbdbd','DTL':'#42a5f5','SON':'#1976d2','DCS':'#90a4ae',
+    'SON':'#1976d2','DTL':'#42a5f5',
+    // === Hạ tầng ===
+    'DGT':'#9e9e9e','DCS':'#90a4ae',
     'SKC':'#ff7043','SKC+CLN':'#ff8a65',
     'TMD':'#ff9800','DGD':'#ab47bc','DVH':'#ec407a','DBV':'#4caf50',
     'DTT':'#84ffff','DNL':'#8d6e63','BCS':'#78909c','TSC':'#455a64','DCH':'#ffd54f',
@@ -467,7 +476,20 @@ async function loadLayer(config) {
         if (!resp.ok) throw new Error('not found');
         const data = await resp.json();
         const leafletLayer = L.geoJSON(data, {
-            style: f => ({ color: '#fff', weight: 0.7, fillColor: getColor(f.properties.KHLOAIDAT||''), fillOpacity: 0.55 }),
+            style: f => {
+                const code = f.properties.KHLOAIDAT || '';
+                const isONT = code.includes('ONT');
+                const isCLNonly = code === 'CLN' || code === 'CLN+NTS' || code === 'CLN+RSX';
+                let opacity = 0.45;  // mặc định trong, để lộ vệ tinh
+                if (isONT) opacity = 0.65;  // ONT đỏ nổi bật hơn
+                if (isCLNonly) opacity = 0.35;  // CLN trong nhất
+                return {
+                    color: '#ffffff',
+                    weight: 0.6,
+                    fillColor: getColor(code),
+                    fillOpacity: opacity
+                };
+            },
             onEachFeature: (f, layer) => {
                 layer.bindPopup(createPopup(f.properties), { maxWidth: 320 });
                 layer.on({ mouseover: highlightFeature, mouseout: resetHighlight });
