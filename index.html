@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bản đồ khu vực Nông trường Việt Mông</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&display=swap');
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #0f3a4a;
+            --primary-light: #1a7a6a;
+            --accent: #d4874e;
+            --bg-panel: #f7f9fb;
+            --text: #1c2b38;
+            --text-light: #6b7d8e;
+            --border: #dde3ea;
+            --shadow: 0 2px 16px rgba(0,0,0,0.1);
+        }
+        body { font-family: 'Be Vietnam Pro', sans-serif; background: #eef1f5; color: var(--text); }
+
+        /* HEADER */
+        .header {
+            background: linear-gradient(135deg, #0a2532 0%, #155244 50%, #1a6855 100%);
+            color: white; padding: 11px 22px;
+            display: flex; align-items: center; justify-content: space-between;
+            position: relative; z-index: 1000;
+            box-shadow: 0 3px 14px rgba(0,0,0,0.22);
+        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .header-logo {
+            width: 40px; height: 40px;
+            background: rgba(255,255,255,0.13);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 11px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 19px;
+        }
+        .header h1 { font-size: 12.5px; font-weight: 600; letter-spacing: 0.6px; opacity: 0.78; }
+        .header h2 { font-size: 14.5px; font-weight: 600; letter-spacing: 0.3px; margin-top: 1px; }
+        .header-right { display: flex; gap: 6px; }
+        .btn-header {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white; padding: 6px 13px;
+            border-radius: 7px; font-size: 11.5px;
+            font-family: inherit; cursor: pointer;
+            transition: all 0.2s; font-weight: 500;
+        }
+        .btn-header:hover { background: rgba(255,255,255,0.22); transform: translateY(-1px); }
+
+        /* MAP & SIDEBAR */
+        .map-wrapper { display: flex; height: calc(100vh - 56px); position: relative; }
+        #map { flex: 1; z-index: 1; background: #c8d4dc; }
+
+        .sidebar {
+            width: 320px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            z-index: 500;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 1px 0 6px rgba(0,0,0,0.04);
+        }
+        .sidebar::-webkit-scrollbar { width: 6px; }
+        .sidebar::-webkit-scrollbar-track { background: transparent; }
+        .sidebar::-webkit-scrollbar-thumb { background: #cdd5de; border-radius: 3px; }
+
+        .sidebar-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+        .sidebar-section:last-child { border-bottom: none; }
+        .section-title {
+            font-size: 10px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 1.2px;
+            color: var(--text-light); margin-bottom: 11px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .section-title::before {
+            content: ''; width: 3px; height: 10px; background: var(--primary-light);
+            border-radius: 2px;
+        }
+
+        /* LAYER ITEMS */
+        .layer-item {
+            display: flex; align-items: center; gap: 11px;
+            padding: 8px 11px; border-radius: 9px;
+            cursor: pointer; transition: all 0.15s;
+            margin-bottom: 3px;
+        }
+        .layer-item:hover { background: #e9eff5; }
+        .layer-toggle {
+            width: 36px; height: 20px;
+            background: #c5cdd6; border-radius: 10px;
+            position: relative; transition: background 0.25s; flex-shrink: 0;
+        }
+        .layer-toggle.on { background: var(--primary-light); }
+        .layer-toggle::after {
+            content: ''; position: absolute; top: 2px; left: 2px;
+            width: 16px; height: 16px; background: white; border-radius: 50%;
+            transition: transform 0.25s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .layer-toggle.on::after { transform: translateX(16px); }
+        .layer-info { flex: 1; min-width: 0; }
+        .layer-name { font-size: 13px; font-weight: 500; }
+        .layer-desc { font-size: 10.5px; color: var(--text-light); margin-top: 1px; }
+
+        /* BASEMAP */
+        .basemap-option {
+            display: flex; align-items: center; gap: 10px;
+            padding: 7px 11px; border-radius: 8px; cursor: pointer;
+            transition: background 0.15s; margin-bottom: 2px;
+        }
+        .basemap-option:hover { background: #e9eff5; }
+        .basemap-radio {
+            width: 16px; height: 16px;
+            border-radius: 50%; border: 2px solid #bfc9d4;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: all 0.2s;
+        }
+        .basemap-radio.selected { border-color: var(--primary-light); }
+        .basemap-radio.selected::after {
+            content: ''; width: 8px; height: 8px;
+            border-radius: 50%; background: var(--primary-light);
+        }
+        .basemap-name { font-size: 12.5px; }
+
+        /* LEGEND */
+        .legend-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; }
+        .legend-item {
+            display: flex; align-items: center; gap: 6px;
+            padding: 3px 0; font-size: 11px;
+        }
+        .legend-swatch {
+            width: 14px; height: 14px;
+            border-radius: 3px; flex-shrink: 0;
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .stat-row {
+            display: flex; justify-content: space-between; padding: 5px 0;
+            font-size: 12px; border-bottom: 1px solid #edf0f4;
+        }
+        .stat-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .stat-label { color: var(--text-light); }
+        .stat-value { font-weight: 600; }
+
+        .info-box {
+            background: linear-gradient(135deg, #f0f4f8 0%, #e8ede4 100%);
+            border: 1px solid var(--border); border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 11.5px; line-height: 1.6; color: var(--text-light);
+        }
+        .info-box strong { color: var(--text); }
+
+        /* MOBILE TOGGLE */
+        .sidebar-toggle {
+            display: none; position: absolute;
+            top: 12px; left: 12px; z-index: 600;
+            width: 42px; height: 42px;
+            background: white; border: none; border-radius: 11px;
+            box-shadow: var(--shadow); cursor: pointer;
+            font-size: 20px;
+            align-items: center; justify-content: center;
+        }
+
+        /* COORD DISPLAY */
+        .coord-display {
+            position: absolute; bottom: 8px; left: 50%;
+            transform: translateX(-50%); z-index: 500;
+            background: rgba(255,255,255,0.94);
+            backdrop-filter: blur(10px);
+            padding: 5px 14px; border-radius: 20px;
+            font-size: 10.5px; color: var(--text-light);
+            box-shadow: 0 1px 8px rgba(0,0,0,0.1);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* CREDIT BOX */
+        .credit-box {
+            position: absolute; bottom: 12px; left: 12px; z-index: 500;
+            background: rgba(255,255,255,0.94); backdrop-filter: blur(10px);
+            padding: 9px 13px; border-radius: 11px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+            display: flex; align-items: center; gap: 10px;
+            max-width: 320px;
+        }
+        .credit-logo { height: 36px; border-radius: 4px; }
+        .credit-text { font-size: 9.5px; line-height: 1.5; color: #455a64; }
+        .credit-text strong { color: var(--primary); font-weight: 600; }
+
+        /* POPUP */
+        .leaflet-popup-content-wrapper {
+            border-radius: 11px !important;
+            font-family: 'Be Vietnam Pro', sans-serif !important;
+            box-shadow: 0 5px 28px rgba(0,0,0,0.2) !important;
+            padding: 0 !important;
+        }
+        .leaflet-popup-content {
+            margin: 12px 16px !important;
+            font-size: 12.5px !important; line-height: 1.5 !important;
+        }
+        .popup-header {
+            font-weight: 700; font-size: 13.5px;
+            color: var(--primary); margin-bottom: 9px;
+            padding-bottom: 7px; border-bottom: 2px solid #e8ecf0;
+            display: flex; align-items: center; gap: 7px;
+        }
+        .popup-header::before {
+            content: '📍'; font-size: 13px;
+        }
+        .popup-row {
+            display: flex; justify-content: space-between;
+            padding: 3.5px 0; gap: 14px;
+        }
+        .popup-label { color: #7b8d9e; font-size: 11.5px; white-space: nowrap; }
+        .popup-value {
+            font-weight: 500; font-size: 11.5px;
+            text-align: right; word-break: break-word;
+        }
+        .popup-tag {
+            display: inline-block;
+            background: var(--primary-light); color: white;
+            padding: 1px 7px; border-radius: 4px;
+            font-size: 10.5px; font-weight: 600;
+        }
+
+        /* LOADING */
+        .loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #0a2532 0%, #1a6855 100%);
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 9999; color: white; transition: opacity 0.5s;
+        }
+        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+        .loading-spinner {
+            width: 48px; height: 48px;
+            border: 3px solid rgba(255,255,255,0.15);
+            border-top-color: #4ecdc4;
+            border-radius: 50%; animation: spin 0.8s linear infinite;
+        }
+        .loading-text {
+            margin-top: 18px; font-size: 13.5px;
+            font-weight: 300; opacity: 0.85;
+            letter-spacing: 0.5px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            .header { padding: 9px 14px; }
+            .header h1 { font-size: 10.5px; }
+            .header h2 { font-size: 12px; }
+            .header-right { display: none; }
+            .header-logo { width: 34px; height: 34px; font-size: 16px; }
+            .sidebar {
+                position: absolute; left: 0; top: 0; height: 100%;
+                transform: translateX(-100%);
+                box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+            }
+            .sidebar.open { transform: translateX(0); }
+            .sidebar-toggle { display: flex; }
+            .credit-box { bottom: 6px; left: 6px; padding: 6px 9px; }
+            .credit-logo { height: 26px; }
+            .credit-text { font-size: 8.5px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Đang tải bản đồ...</div>
+</div>
+
+<div class="header">
+    <div class="header-left">
+        <div class="header-logo">🗺️</div>
+        <div>
+            <h1>ỦY BAN NHÂN DÂN XÃ YÊN BÀI</h1>
+            <h2>Bản đồ khu vực Nông trường Việt Mông</h2>
+        </div>
+    </div>
+    <div class="header-right">
+        <button class="btn-header" onclick="zoomToAll()">⊞ Toàn cảnh</button>
+        <button class="btn-header" onclick="toggleFullscreen()">⛶ Toàn màn hình</button>
+    </div>
+</div>
+
+<div class="map-wrapper">
+    <button class="sidebar-toggle" onclick="toggleSidebar()">☰</button>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-section">
+            <div class="section-title">Bản đồ nền</div>
+            <div class="basemap-option" onclick="switchBasemap('osm')">
+                <div class="basemap-radio" id="radio-osm"></div>
+                <span class="basemap-name">OpenStreetMap</span>
+            </div>
+            <div class="basemap-option" onclick="switchBasemap('satellite')">
+                <div class="basemap-radio" id="radio-satellite"></div>
+                <span class="basemap-name">Ảnh vệ tinh</span>
+            </div>
+            <div class="basemap-option" onclick="switchBasemap('hybrid')">
+                <div class="basemap-radio selected" id="radio-hybrid"></div>
+                <span class="basemap-name">Vệ tinh + Địa danh</span>
+            </div>
+            <div class="basemap-option" onclick="switchBasemap('topo')">
+                <div class="basemap-radio" id="radio-topo"></div>
+                <span class="basemap-name">Địa hình</span>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="section-title">Lớp bản đồ</div>
+            <div id="layer-list"></div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="section-title">Chú giải loại đất</div>
+            <div class="legend-grid" id="legend-grid"></div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="section-title">Thống kê</div>
+            <div id="stats-box"></div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="info-box">
+                <strong>Hướng dẫn:</strong> Click vào thửa đất để xem thuộc tính. Bật/tắt lớp bản đồ ở trên. Dùng chuột hoặc ngón tay để kéo, zoom.
+            </div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+    <div class="coord-display" id="coord-display">Di chuyển chuột để xem tọa độ</div>
+    <div class="credit-box">
+        <img src="logo.jpg" class="credit-logo" alt="Thanh Hà">
+        <div class="credit-text">
+            <strong>Đơn vị xây dựng:</strong> Công ty CP Tư vấn Ứng dụng<br>và Phát triển Công nghệ Thanh Hà<br>
+            <strong>Liên hệ:</strong> Mr Tuấn — 0911 558 628
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+
+// MÀU SẮC THEO LOẠI ĐẤT
+const LAND_COLORS = {
+    'ONT':'#e8524a','ONT+CLN':'#f0866e','ONT+CLN+NTS':'#ff8a65','ONT+CLN+RSX':'#ef5350',
+    'ONT+CLN+NKH':'#ff7043','ONT+RSX':'#e57373','ONT+CLN+BHK':'#ffa07a','ONT+CLN+HNK':'#ffab91','ONT+NTS':'#ff8a65',
+    'CLN':'#66bb6a','CLN+NTS':'#81c784','CLN+RSX':'#4caf50',
+    'RSX':'#2e7d32','HNK':'#a5d6a7','BHK':'#9ccc65','LUK':'#aed581','LUC':'#c5e1a5',
+    'NKH':'#dce775','NKH+NTS':'#cddc39','NKH+RSX':'#9e9d24','HNK+NTS':'#9ccc65',
+    'NTS':'#29b6f6','NTS+HNK':'#4fc3f7','NTS+BHK':'#81d4fa','NTS+CLN':'#80deea',
+    'DGT':'#bdbdbd','DTL':'#42a5f5','SON':'#1976d2','DCS':'#90a4ae',
+    'SKC':'#ff7043','SKC+CLN':'#ff8a65',
+    'TMD':'#ff9800','DGD':'#ab47bc','DVH':'#ec407a','DBV':'#4caf50',
+    'DTT':'#84ffff','DNL':'#8d6e63','BCS':'#78909c','TSC':'#455a64','DCH':'#ffd54f',
+    'SKX':'#ff5722','CQP':'#5d4037','TIN':'#9e9e9e','DSH':'#ffe082','NTD':'#0288d1'
+};
+
+const LAND_NAMES = {
+    'ONT':'Đất ở nông thôn','ONT+CLN':'Đất ở + CLN','ONT+CLN+NTS':'Đất ở + CLN + NTS',
+    'ONT+CLN+RSX':'Đất ở + CLN + RSX','ONT+CLN+NKH':'Đất ở + CLN + NKH',
+    'ONT+RSX':'Đất ở + RSX','ONT+CLN+BHK':'Đất ở + CLN + BHK',
+    'ONT+CLN+HNK':'Đất ở + CLN + HNK','ONT+NTS':'Đất ở + NTS',
+    'CLN':'Cây lâu năm','CLN+NTS':'CLN + NTS','CLN+RSX':'CLN + RSX',
+    'RSX':'Rừng sản xuất','HNK':'Cây hàng năm khác',
+    'BHK':'Đất bằng hàng năm khác','LUK':'Lúa khác','LUC':'Lúa nước',
+    'NKH':'Nông nghiệp khác','NKH+NTS':'NKH + NTS','NKH+RSX':'NKH + RSX',
+    'HNK+NTS':'HNK + NTS','NTS':'Nuôi trồng thủy sản','NTS+HNK':'NTS + HNK',
+    'NTS+BHK':'NTS + BHK','NTS+CLN':'NTS + CLN',
+    'DGT':'Đất giao thông','DTL':'Đất thủy lợi','SON':'Sông suối','DCS':'Đất chưa sử dụng',
+    'SKC':'SX kinh doanh','SKC+CLN':'SKC + CLN',
+    'TMD':'Thương mại DV','DGD':'Đất giáo dục','DVH':'Đất văn hóa','DBV':'Đất bảo vệ',
+    'DTT':'Đất thể thao','DNL':'Đất năng lượng','BCS':'Bằng chưa sử dụng',
+    'TSC':'Trụ sở cơ quan','DCH':'Đất chợ','SKX':'SK xây dựng','CQP':'Quốc phòng',
+    'TIN':'Tín ngưỡng','DSH':'Đất sinh hoạt','NTD':'Nuôi trồng khác'
+};
+
+const PROP_LABELS = {
+    'SHTHUA':'Số thửa','SHBANDO':'Tờ bản đồ','DIENTICH':'Diện tích',
+    'KHLOAIDAT':'Loại đất','TENCHU':'Chủ sử dụng','DIACHI':'Địa chỉ',
+    'DIADANH':'Địa danh','DaCapGCN':'GCN'
+};
+
+// MAP INIT
+const map = L.map('map', { center: [21.0603, 105.4437], zoom: 14, zoomControl: false });
+L.control.zoom({ position: 'topright' }).addTo(map);
+L.control.scale({ imperial: false, position: 'bottomright' }).addTo(map);
+
+// BASEMAPS
+const basemaps = {
+    osm: L.layerGroup([
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 19 })
+    ]),
+    satellite: L.layerGroup([
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri', maxZoom: 19 })
+    ]),
+    hybrid: L.layerGroup([
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri', maxZoom: 19 }),
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri', maxZoom: 19 }),
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri', maxZoom: 19 })
+    ]),
+    topo: L.layerGroup([
+        L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', { attribution: '© OpenTopoMap', maxZoom: 17 })
+    ])
+};
+basemaps.hybrid.addTo(map);
+let currentBasemap = 'hybrid';
+
+function switchBasemap(name) {
+    map.removeLayer(basemaps[currentBasemap]);
+    basemaps[name].addTo(map);
+    currentBasemap = name;
+    document.querySelectorAll('.basemap-radio').forEach(r => r.classList.remove('selected'));
+    document.getElementById('radio-' + name).classList.add('selected');
+}
+
+// LAYERS
+const layerObjects = {};
+const LAYERS_CONFIG = [
+    { id: 'diachinh', name: 'Bản đồ địa chính', desc: '4.537 thửa đất', file: 'data/diachinh.geojson', visible: true },
+    // Bỏ comment khi có file:
+    // { id: 'qhpk', name: 'QH Phân khu', desc: 'Quy hoạch phân khu', file: 'data/qh-phan-khu.geojson', visible: false },
+    // { id: 'qhsdd', name: 'QH Sử dụng đất', desc: 'Quy hoạch sử dụng đất', file: 'data/qh-su-dung-dat.geojson', visible: false },
+    // { id: 'qhc', name: 'Quy hoạch chung', desc: 'Quy hoạch chung', file: 'data/qh-chung.geojson', visible: false },
+];
+
+function getColor(code) { return LAND_COLORS[code] || '#90a4ae'; }
+
+function createPopup(props) {
+    let loaiDat = props.KHLOAIDAT || '';
+    let tenLoai = LAND_NAMES[loaiDat] || loaiDat;
+    let html = `<div class="popup-header">Thửa ${props.SHTHUA||'?'} — Tờ ${props.SHBANDO||'?'}</div>`;
+
+    const fields = ['KHLOAIDAT','DIENTICH','TENCHU','DIADANH','DaCapGCN'];
+    fields.forEach(key => {
+        let val = props[key];
+        if (val === null || val === undefined || val === '') return;
+        let label = PROP_LABELS[key] || key;
+
+        if (key === 'KHLOAIDAT') {
+            val = `<span class="popup-tag" style="background:${getColor(loaiDat)}">${val}</span> ${tenLoai}`;
+        }
+        if (key === 'DIENTICH') val = Number(val).toLocaleString('vi-VN', {maximumFractionDigits:1}) + ' m²';
+        if (key === 'DaCapGCN') val = val == 1 ? '✓ Đã cấp' : '— Chưa cấp';
+
+        html += `<div class="popup-row"><span class="popup-label">${label}</span><span class="popup-value">${val}</span></div>`;
+    });
+    return html;
+}
+
+function highlightFeature(e) {
+    e.target.setStyle({ weight: 3, color: '#ffd600', fillOpacity: 0.85 });
+    e.target.bringToFront();
+}
+function resetHighlight(e) {
+    if (layerObjects.diachinh) layerObjects.diachinh.leafletLayer.resetStyle(e.target);
+}
+
+async function loadLayer(config) {
+    try {
+        const resp = await fetch(config.file);
+        if (!resp.ok) throw new Error('not found');
+        const data = await resp.json();
+        const leafletLayer = L.geoJSON(data, {
+            style: f => ({ color: '#fff', weight: 0.7, fillColor: getColor(f.properties.KHLOAIDAT||''), fillOpacity: 0.55 }),
+            onEachFeature: (f, layer) => {
+                layer.bindPopup(createPopup(f.properties), { maxWidth: 320 });
+                layer.on({ mouseover: highlightFeature, mouseout: resetHighlight });
+            }
+        });
+        layerObjects[config.id] = { leafletLayer, config, visible: config.visible, data };
+        if (config.visible) {
+            leafletLayer.addTo(map);
+            map.fitBounds(leafletLayer.getBounds(), { padding: [30, 30] });
+        }
+        if (config.id === 'diachinh') { buildLegend(data); buildStats(data); }
+    } catch (err) { console.warn('Chưa có:', config.file); }
+}
+
+function buildLegend(data) {
+    const counts = {};
+    data.features.forEach(f => { const k = f.properties.KHLOAIDAT||'Khác'; counts[k]=(counts[k]||0)+1; });
+    const grid = document.getElementById('legend-grid');
+    grid.innerHTML = '';
+    Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,20).forEach(([code,count]) => {
+        grid.innerHTML += `<div class="legend-item" title="${LAND_NAMES[code]||code}"><div class="legend-swatch" style="background:${getColor(code)}"></div><span>${code} (${count})</span></div>`;
+    });
+}
+
+function buildStats(data) {
+    let totalDT = 0, daCap = 0;
+    data.features.forEach(f => {
+        totalDT += f.properties.DIENTICH||0;
+        if (f.properties.DaCapGCN == 1) daCap++;
+    });
+    const total = data.features.length;
+    document.getElementById('stats-box').innerHTML = `
+        <div class="stat-row"><span class="stat-label">Tổng số thửa</span><span class="stat-value">${total.toLocaleString('vi-VN')}</span></div>
+        <div class="stat-row"><span class="stat-label">Tổng diện tích</span><span class="stat-value">${(totalDT/10000).toFixed(1)} ha</span></div>
+        <div class="stat-row"><span class="stat-label">Đã cấp GCN</span><span class="stat-value">${daCap.toLocaleString('vi-VN')} (${(daCap/total*100).toFixed(0)}%)</span></div>`;
+}
+
+function buildLayerList() {
+    const list = document.getElementById('layer-list');
+    LAYERS_CONFIG.forEach(config => {
+        const item = document.createElement('div');
+        item.className = 'layer-item';
+        item.innerHTML = `<div class="layer-toggle ${config.visible?'on':''}" id="toggle-${config.id}"></div><div class="layer-info"><div class="layer-name">${config.name}</div><div class="layer-desc">${config.desc}</div></div>`;
+        item.addEventListener('click', () => {
+            const obj = layerObjects[config.id]; if (!obj) return;
+            const t = document.getElementById('toggle-'+config.id);
+            if (obj.visible) { map.removeLayer(obj.leafletLayer); obj.visible=false; t.classList.remove('on'); }
+            else { obj.leafletLayer.addTo(map); obj.visible=true; t.classList.add('on'); }
+        });
+        list.appendChild(item);
+    });
+}
+
+buildLayerList();
+Promise.all(LAYERS_CONFIG.map(loadLayer)).then(() => {
+    document.getElementById('loading').classList.add('hidden');
+});
+
+map.on('mousemove', e => {
+    document.getElementById('coord-display').textContent = `${e.latlng.lat.toFixed(6)}, ${e.latlng.lng.toFixed(6)}`;
+});
+
+function zoomToAll() {
+    const b = [];
+    Object.values(layerObjects).forEach(o => { if (o.visible && o.leafletLayer.getBounds) b.push(o.leafletLayer.getBounds()); });
+    if (b.length) { let c=b[0]; b.slice(1).forEach(x=>c.extend(x)); map.fitBounds(c,{padding:[30,30]}); }
+}
+function toggleFullscreen() {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+}
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+</script>
+</body>
+</html>
