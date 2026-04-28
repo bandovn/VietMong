@@ -436,6 +436,8 @@ const LAYERS_CONFIG = [
     { id: 'thudo', name: 'QH Thủ đô Hà Nội đến 2065', desc: '272 ô quy hoạch', file: 'data/qh_thudo.geojson', visible: false },
 ];
 
+function getColor(code) { return LAND_COLORS[code] || '#90a4ae'; }
+
 // Màu QH Sinh thái (dùng lại LAND_COLORS + bổ sung)
 const ST_EXTRA = { 'UBQ':'#7e57c2', 'CSD':'#b0bec5' };
 function getStColor(code) { return LAND_COLORS[code] || ST_EXTRA[code] || '#90a4ae'; }
