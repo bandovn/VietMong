@@ -432,13 +432,70 @@ function switchBasemap(name) {
 const layerObjects = {};
 const LAYERS_CONFIG = [
     { id: 'diachinh', name: 'Bản đồ địa chính', desc: '4.537 thửa đất', file: 'data/diachinh.geojson', visible: true },
-    // Bỏ comment khi có file:
-    // { id: 'qhpk', name: 'QH Phân khu', desc: 'Quy hoạch phân khu', file: 'data/qh-phan-khu.geojson', visible: false },
-    // { id: 'qhsdd', name: 'QH Sử dụng đất', desc: 'Quy hoạch sử dụng đất', file: 'data/qh-su-dung-dat.geojson', visible: false },
-    // { id: 'qhc', name: 'Quy hoạch chung', desc: 'Quy hoạch chung', file: 'data/qh-chung.geojson', visible: false },
+    { id: 'sinhthai', name: 'QH Khu sinh thái Việt Mông', desc: '194 ô quy hoạch', file: 'data/qh_sinhthai.geojson', visible: false },
+    { id: 'thudo', name: 'QH Thủ đô Hà Nội đến 2065', desc: '272 ô quy hoạch', file: 'data/qh_thudo.geojson', visible: false },
 ];
 
-function getColor(code) { return LAND_COLORS[code] || '#90a4ae'; }
+// Màu QH Sinh thái (dùng lại LAND_COLORS + bổ sung)
+const ST_EXTRA = { 'UBQ':'#7e57c2', 'CSD':'#b0bec5' };
+function getStColor(code) { return LAND_COLORS[code] || ST_EXTRA[code] || '#90a4ae'; }
+
+// Màu QH Thủ đô 2065
+const TD_COLORS = {
+    'DVCC':'#ff9800','DCN':'#f0866e','DVO':'#ef5350','ĐT':'#ab47bc',
+    'DT':'#8d6e63','DL':'#26a69a','NT':'#78909c','QP':'#5d4037',
+    'HN':'#1e88e5','NN':'#a5d6a7','RDD':'#1b5e20','RSX':'#4caf50',
+    'SS':'#1976d2','NTS':'#29b6f6','CX':'#66bb6a','HH':'#ffa726',
+    'HT':'#90a4ae','HTNG':'#546e7a','TTX':'#ec407a','THPT':'#ce93d8',
+    'VTT':'#f48fb1','DGT':'#bdbdbd','CNC':'#00bcd4',
+};
+function getTdColor(code) { return TD_COLORS[code] || '#90a4ae'; }
+
+function stPopup(props) {
+    const code = props.MD_QuyHoac || '';
+    const ten = props.TEN_LOAIDAT || code;
+    return `<div class="popup-header">QH Khu sinh thái Việt Mông</div>
+        <div class="popup-row"><span class="popup-label">Ký hiệu</span><span class="popup-value"><span class="popup-tag" style="background:${getStColor(code)}">${code}</span></span></div>
+        <div class="popup-row"><span class="popup-label">Mục đích</span><span class="popup-value">${ten}</span></div>`;
+}
+
+function tdPopup(props) {
+    const code = props.KY_HIEU || '';
+    const ten = props.TEN_QH || '';
+    const area = props.SHAPE_Area ? (props.SHAPE_Area/10000).toFixed(2) + ' ha' : '';
+    return `<div class="popup-header">QH Thủ đô Hà Nội đến 2065</div>
+        <div class="popup-row"><span class="popup-label">Ký hiệu</span><span class="popup-value"><span class="popup-tag" style="background:${getTdColor(code)}">${code}</span></span></div>
+        <div class="popup-row"><span class="popup-label">Chức năng</span><span class="popup-value">${ten}</span></div>
+        ${area ? `<div class="popup-row"><span class="popup-label">Diện tích</span><span class="popup-value">${area}</span></div>` : ''}`;
+}
+
+function getLegendHtml(layerId, data) {
+    const grid = document.createElement('div');
+    grid.className = 'legend-grid';
+    if (layerId === 'diachinh') {
+        const counts = {};
+        data.features.forEach(f => { const k = f.properties.KHLOAIDAT||'Khác'; counts[k]=(counts[k]||0)+1; });
+        Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,20).forEach(([code,count]) => {
+            const ten = LAND_NAMES[code] || code;
+            grid.innerHTML += `<div class="legend-item" title="${ten}"><div class="legend-swatch" style="background:${getColor(code)}"></div><span>${code} (${count})</span></div>`;
+        });
+    } else if (layerId === 'sinhthai') {
+        const counts = {};
+        data.features.forEach(f => { const k = f.properties.MD_QuyHoac||'?'; counts[k]=(counts[k]||0)+1; });
+        Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([code,count]) => {
+            const ten = f => LAND_NAMES[code] || ST_EXTRA[code] ? code : code;
+            grid.innerHTML += `<div class="legend-item" title="${LAND_NAMES[code]||code}"><div class="legend-swatch" style="background:${getStColor(code)}"></div><span>${code} (${count})</span></div>`;
+        });
+    } else if (layerId === 'thudo') {
+        const counts = {};
+        data.features.forEach(f => { const k = f.properties.KY_HIEU||'?'; counts[k]=(counts[k]||0)+1; });
+        Object.entries(counts).sort((a,b)=>b[1]-a[1]).forEach(([code,count]) => {
+            const ten = data.features.find(f=>f.properties.KY_HIEU===code)?.properties.TEN_QH||'';
+            grid.innerHTML += `<div class="legend-item" title="${ten}"><div class="legend-swatch" style="background:${getTdColor(code)}"></div><span>${code} (${count})</span></div>`;
+        });
+    }
+    return grid.outerHTML;
+}
 
 function createPopup(props) {
     let loaiDat = props.KHLOAIDAT || '';
@@ -475,43 +532,54 @@ async function loadLayer(config) {
         const resp = await fetch(config.file);
         if (!resp.ok) throw new Error('not found');
         const data = await resp.json();
-        const leafletLayer = L.geoJSON(data, {
-            style: f => {
-                const code = f.properties.KHLOAIDAT || '';
-                const isONT = code.includes('ONT');
-                const isCLNonly = code === 'CLN' || code === 'CLN+NTS' || code === 'CLN+RSX';
-                let opacity = 0.45;  // mặc định trong, để lộ vệ tinh
-                if (isONT) opacity = 0.65;  // ONT đỏ nổi bật hơn
-                if (isCLNonly) opacity = 0.35;  // CLN trong nhất
-                return {
-                    color: '#ffffff',
-                    weight: 0.6,
-                    fillColor: getColor(code),
-                    fillOpacity: opacity
-                };
-            },
-            onEachFeature: (f, layer) => {
-                layer.bindPopup(createPopup(f.properties), { maxWidth: 320 });
-                layer.on({ mouseover: highlightFeature, mouseout: resetHighlight });
-            }
-        });
+
+        let leafletLayer;
+        if (config.id === 'diachinh') {
+            leafletLayer = L.geoJSON(data, {
+                style: f => {
+                    const code = f.properties.KHLOAIDAT || '';
+                    const isONT = code.includes('ONT');
+                    const isCLNonly = code === 'CLN' || code === 'CLN+NTS' || code === 'CLN+RSX';
+                    let opacity = 0.45;
+                    if (isONT) opacity = 0.65;
+                    if (isCLNonly) opacity = 0.35;
+                    return { color:'#ffffff', weight:0.6, fillColor:getColor(code), fillOpacity:opacity };
+                },
+                onEachFeature: (f, layer) => {
+                    layer.bindPopup(createPopup(f.properties), { maxWidth: 320 });
+                    layer.on({ mouseover: highlightFeature, mouseout: resetHighlight });
+                }
+            });
+        } else if (config.id === 'sinhthai') {
+            leafletLayer = L.geoJSON(data, {
+                style: f => ({ color:'#fff', weight:1.5, fillColor:getStColor(f.properties.MD_QuyHoac||''), fillOpacity:0.45 }),
+                onEachFeature: (f, layer) => {
+                    layer.bindPopup(stPopup(f.properties), { maxWidth: 300 });
+                    layer.on({ mouseover: e => e.target.setStyle({weight:3,color:'#ffd600',fillOpacity:0.7}), mouseout: e => leafletLayer.resetStyle(e.target) });
+                }
+            });
+        } else if (config.id === 'thudo') {
+            leafletLayer = L.geoJSON(data, {
+                style: f => ({ color:'#fff', weight:1.5, fillColor:getTdColor(f.properties.KY_HIEU||''), fillOpacity:0.45 }),
+                onEachFeature: (f, layer) => {
+                    layer.bindPopup(tdPopup(f.properties), { maxWidth: 300 });
+                    layer.on({ mouseover: e => e.target.setStyle({weight:3,color:'#ffd600',fillOpacity:0.7}), mouseout: e => leafletLayer.resetStyle(e.target) });
+                }
+            });
+        }
+
         layerObjects[config.id] = { leafletLayer, config, visible: config.visible, data };
         if (config.visible) {
             leafletLayer.addTo(map);
             map.fitBounds(leafletLayer.getBounds(), { padding: [30, 30] });
         }
-        if (config.id === 'diachinh') { buildLegend(data); buildStats(data); }
+        if (config.id === 'diachinh') { buildLegend(data, 'diachinh'); buildStats(data); }
     } catch (err) { console.warn('Chưa có:', config.file); }
 }
 
-function buildLegend(data) {
-    const counts = {};
-    data.features.forEach(f => { const k = f.properties.KHLOAIDAT||'Khác'; counts[k]=(counts[k]||0)+1; });
+function buildLegend(data, layerId) {
     const grid = document.getElementById('legend-grid');
-    grid.innerHTML = '';
-    Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,20).forEach(([code,count]) => {
-        grid.innerHTML += `<div class="legend-item" title="${LAND_NAMES[code]||code}"><div class="legend-swatch" style="background:${getColor(code)}"></div><span>${code} (${count})</span></div>`;
-    });
+    grid.innerHTML = getLegendHtml(layerId, data);
 }
 
 function buildStats(data) {
@@ -536,8 +604,13 @@ function buildLayerList() {
         item.addEventListener('click', () => {
             const obj = layerObjects[config.id]; if (!obj) return;
             const t = document.getElementById('toggle-'+config.id);
-            if (obj.visible) { map.removeLayer(obj.leafletLayer); obj.visible=false; t.classList.remove('on'); }
-            else { obj.leafletLayer.addTo(map); obj.visible=true; t.classList.add('on'); }
+            if (obj.visible) {
+                map.removeLayer(obj.leafletLayer); obj.visible=false; t.classList.remove('on');
+            } else {
+                obj.leafletLayer.addTo(map); obj.visible=true; t.classList.add('on');
+                // Cập nhật chú giải theo lớp vừa bật
+                buildLegend(obj.data, config.id);
+            }
         });
         list.appendChild(item);
     });
