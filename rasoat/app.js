@@ -301,6 +301,11 @@ function renderThuaDetail(feature) {
           <div class="label">Trạng thái kê khai 2022</div>
           <div class="value">${p.trang_thai_ke_khai}</div>
         </div>` : ''}
+        ${p.da_cap_gcn === 1 ? `
+        <div class="full">
+          <div class="label">Giấy chứng nhận QSDĐ</div>
+          <div class="value" style="color:var(--accent)">✓ Đã được cấp</div>
+        </div>` : ''}
       </div>
 
       <div class="classification">
@@ -692,6 +697,7 @@ function renderDashboard() {
 
   document.getElementById('stat-total').textContent = total.toLocaleString('vi-VN');
   document.getElementById('stat-area').textContent = (totalArea/10000).toLocaleString('vi-VN', {maximumFractionDigits:1}) + ' ha';
+  document.getElementById('stat-area-m2').textContent = Math.round(totalArea).toLocaleString('vi-VN') + ' m² đã đo đạc';
   document.getElementById('stat-bg').textContent = bgFeats.length.toLocaleString('vi-VN') + ' thửa';
   document.getElementById('stat-bg-ha').textContent = (bgFeats.reduce((s,p)=>s+(p.dt_2016||0),0)/10000).toLocaleString('vi-VN',{maximumFractionDigits:1}) + ' ha';
   document.getElementById('stat-gl').textContent = glFeats.length.toLocaleString('vi-VN') + ' thửa';

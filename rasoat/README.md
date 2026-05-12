@@ -1,8 +1,25 @@
 # Hệ thống rà soát đất Nông trường Việt Mông
 
-Ứng dụng web tĩnh hỗ trợ rà soát 4.146 thửa đất phục vụ lập phương án theo Điều 181 Luật Đất đai 2024.
+Ứng dụng web tĩnh hỗ trợ rà soát **4.536 thửa đất** (tổng **980,2 ha**) phục vụ lập phương án theo Điều 181 Luật Đất đai 2024.
 
-**Tham khảo**: [Bản đồ khu vực Nông trường Việt Mông](https://bandovn.github.io/VietMong/) — phiên bản hiện tại
+**Tham khảo**: [Bản đồ khu vực Nông trường Việt Mông](https://bandovn.github.io/VietMong/)
+
+## Dữ liệu nguồn
+
+Ranh giới thửa **đã là dữ liệu thật** từ bản đồ địa chính đo đạc 2014-2016 (file `diachinh.geojson` từ UBND xã Yên Bài). Tổng **4.536 thửa** phân bổ trên 7 thôn:
+
+| Xã | Thôn | Số thửa | Diện tích (ha) |
+|---|---|---:|---:|
+| Vân Hòa | Thôn Việt Hòa | 1.211 | 141,6 |
+| Yên Bài | Thôn Phú Yên | 704 | 277,5 |
+| Yên Bài | Thôn Việt Yên | 619 | 222,8 |
+| Yên Bài | Thôn Muỗi | 918 | 126,8 |
+| Yên Bài | Thôn Quảng Phúc | 625 | 118,6 |
+| Yên Bài | Thôn Bài | 60 | 18,2 |
+| Kim Sơn (Sơn Tây cũ) | Thôn Lòng Hồ | 399 | 74,7 |
+| **Tổng** | | **4.536** | **980,2** |
+
+Dữ liệu phân loại 4 trục: kế thừa từ rà soát 2022 (xã Yên Bài + xã Vân Hòa), 4.095/4.536 thửa đã có phân loại sơ bộ tự động; 441 thửa còn lại (chủ yếu thôn Lòng Hồ - Kim Sơn) cần rà soát thực địa mới.
 
 ## Tính năng
 
@@ -36,61 +53,11 @@ vietmong_app/
 
 Không cần backend, không cần database, không phát sinh chi phí.
 
-## Thay GeoJSON mô phỏng bằng dữ liệu thật
+## Cập nhật dữ liệu
 
-File `thuadat.geojson` hiện tại đang dùng **polygon mô phỏng** (tạo ngẫu nhiên gần trung tâm các thôn) để demo. Khi có dữ liệu ranh giới thửa thật từ bản đồ đo đạc 2016, thay thế như sau:
-
-### Bước 1 — Lấy ranh giới thật từ bản đồ địa chính
-
-Dữ liệu nguồn có thể đến từ:
-- File `*.dgn` hoặc `*.shp` của bản đồ địa chính 2016 (đơn vị đo đạc cung cấp)
-- File GeoJSON đã có trong website `bandovn.github.io/VietMong/` (nếu nguồn này đầy đủ thuộc tính)
-
-### Bước 2 — Chuẩn hóa thuộc tính
-
-Mỗi feature trong GeoJSON cần các trường sau (xem `thuadat.geojson` mẫu để biết format):
-
-| Trường | Kiểu | Bắt buộc | Mô tả |
-|---|---|---|---|
-| `id` | string | ✓ | ID duy nhất, vd `Yên Bài_15_1` |
-| `xa` | string | ✓ | Tên xã |
-| `thon` | string | ✓ | Tên thôn |
-| `to_bd` | number | ✓ | Số tờ bản đồ |
-| `thua` | number | ✓ | Số thửa |
-| `chu_sd_2016` | string | | Tên chủ SD theo SMK 2016 |
-| `loai_dat_2016` | string | | Mã loại đất, vd "CLN", "ONT+CLN" |
-| `dt_2016` | number | | Diện tích đo 2016 (m²) |
-| `chu_sd_2022` | string | | Danh sách chủ SD theo rà soát 2022 |
-| `so_thua_con` | number | | Số thửa con sau tách (1 nếu không tách) |
-| `truc_a` | string | | Mã Trục A (xem `app.js`) |
-| `truc_b` | string | | Mã Trục B |
-| `truc_c` | string | | Mã Trục C |
-| `de_xuat` | string | | Mã đề xuất |
-| `trang_thai_ke_khai` | string | | "Không biến động" / "Chưa kê khai" / "Có biến động" |
-| `so_cong_trinh` | number | | Số công trình XD trên thửa |
-
-### Bước 3 — Chuyển đổi
-
-Có thể dùng Python với `geopandas`:
-
-```python
-import geopandas as gpd
-import pandas as pd
-
-# Đọc shapefile bản đồ địa chính
-gdf = gpd.read_file('ban_do_2016.shp')
-gdf = gdf.to_crs(epsg=4326)  # WGS84 cho Leaflet
-
-# Merge với dữ liệu phân loại
-df_class = pd.read_pickle('df_thua_me_v2.pkl')
-gdf = gdf.merge(df_class, on=['to_bd','thua'])
-
-# Đặt ID
-gdf['id'] = gdf['xa'] + '_' + gdf['to_bd'].astype(str) + '_' + gdf['thua'].astype(str)
-
-# Xuất GeoJSON
-gdf.to_file('thuadat.geojson', driver='GeoJSON')
-```
+Nếu sau này cần cập nhật:
+- **Phân loại 4 trục**: chỉnh sửa trực tiếp trên web (lưu localStorage), xuất CSV, gộp lại
+- **Ranh giới thửa**: thay file `thuadat.geojson` với cùng cấu trúc properties (xem feature đầu tiên làm mẫu)
 
 ## Quy trình rà soát đề xuất
 
