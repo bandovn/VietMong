@@ -254,6 +254,11 @@ function selectThua(id, layer) {
   }
 
   renderThuaDetail(feature);
+
+  /* Trên mobile, mở rightbar dạng bottom sheet */
+  if (window.innerWidth <= 767) {
+    document.getElementById('rightbar').classList.add('show');
+  }
 }
 
 function renderThuaDetail(feature) {
@@ -486,31 +491,77 @@ function initFilters() {
  * NAV (chuyển view)
  * ============================================================================ */
 function initNav() {
-  document.querySelectorAll('.nav-btn').forEach(btn => {
+  /* Cả nav top (desktop) và bottom nav (mobile) đều dùng chung handler */
+  document.querySelectorAll('.nav-btn, .mobile-nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
       const view = btn.dataset.view;
-
-      document.getElementById('view-map').classList.toggle('hidden', view !== 'map');
-      document.getElementById('view-table').classList.toggle('hidden', view !== 'table');
-      document.getElementById('view-dashboard').classList.toggle('hidden', view !== 'dashboard');
-      document.getElementById('view-help').classList.toggle('hidden', view !== 'help');
-
-      /* Sidebar và rightbar chỉ show ở view map */
-      document.getElementById('sidebar').classList.toggle('hidden', view !== 'map');
-      document.getElementById('rightbar').classList.toggle('hidden', view !== 'map');
-
-      /* Đổi grid layout: khi không ở map, dùng layout 1 cột */
-      document.querySelector('.main').classList.toggle('no-sidebar', view !== 'map');
-
-      if (view === 'map' && state.map) {
-        setTimeout(() => state.map.invalidateSize(), 50);
-      }
-      if (view === 'table') renderTable();
-      if (view === 'dashboard') renderDashboard();
+      switchView(view);
     });
   });
+
+  /* Hamburger menu - toggle sidebar trên mobile */
+  document.querySelector('.topbar').addEventListener('click', e => {
+    if (window.innerWidth > 767) return;
+    /* Chỉ trigger khi click vùng ::after (hamburger ở góc phải) */
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (e.clientX > rect.right - 50) {
+      toggleSidebar();
+    }
+  });
+
+  /* Click overlay để đóng sidebar */
+  document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
+}
+
+function switchView(view) {
+  /* Update active state cho cả 2 nav */
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+
+  document.getElementById('view-map').classList.toggle('hidden', view !== 'map');
+  document.getElementById('view-table').classList.toggle('hidden', view !== 'table');
+  document.getElementById('view-dashboard').classList.toggle('hidden', view !== 'dashboard');
+  document.getElementById('view-help').classList.toggle('hidden', view !== 'help');
+
+  /* Sidebar và rightbar chỉ show ở view map (trên desktop) */
+  if (window.innerWidth > 767) {
+    document.getElementById('sidebar').classList.toggle('hidden', view !== 'map');
+    document.getElementById('rightbar').classList.toggle('hidden', view !== 'map');
+    document.querySelector('.main').classList.toggle('no-sidebar', view !== 'map');
+  } else {
+    /* Trên mobile, sidebar và rightbar là drawer/sheet — đóng khi đổi view */
+    closeSidebar();
+    closeRightbarMobile();
+  }
+
+  if (view === 'map' && state.map) {
+    setTimeout(() => state.map.invalidateSize(), 50);
+  }
+  if (view === 'table') renderTable();
+  if (view === 'dashboard') renderDashboard();
+}
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const isOpen = sidebar.classList.contains('show');
+  if (isOpen) {
+    closeSidebar();
+  } else {
+    sidebar.classList.add('show');
+    overlay.classList.add('show');
+    document.querySelector('.topbar').classList.add('menu-open');
+  }
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('show');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+  document.querySelector('.topbar').classList.remove('menu-open');
+}
+
+function closeRightbarMobile() {
+  document.getElementById('rightbar').classList.remove('show');
 }
 
 /* ============================================================================

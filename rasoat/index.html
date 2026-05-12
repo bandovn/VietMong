@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Rà soát đất Nông trường Việt Mông</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="style.css">
@@ -87,7 +87,7 @@
 
     <div class="map-area" id="view-map">
       <div id="map"></div>
-      <div class="loading" id="map-loading">Đang tải 4.146 thửa đất...</div>
+      <div class="loading" id="map-loading">Đang tải 4.536 thửa đất...</div>
 
       <div class="map-overlay-tr">
         <div><strong id="visible-count">—</strong> thửa hiển thị</div>
@@ -200,7 +200,7 @@
 
       <div class="help-section">
         <h2>1. Mục đích hệ thống</h2>
-        <p>Hệ thống hỗ trợ rà soát toàn diện 4.146 thửa đất thuộc diện tích Nông trường Việt Mông tại huyện Ba Vì, phục vụ lập phương án bàn giao và sử dụng đất theo Điều 181 Luật Đất đai 2024 (NĐ 03/2024/NĐ-CP).</p>
+        <p>Hệ thống hỗ trợ rà soát toàn diện 4.536 thửa đất (tổng 980,2 ha) thuộc diện tích Nông trường Việt Mông tại huyện Ba Vì và thị xã Sơn Tây cũ, phục vụ lập phương án bàn giao và sử dụng đất theo Điều 181 Luật Đất đai 2024 (NĐ 03/2024/NĐ-CP).</p>
         <p>Hệ thống kế thừa kết quả đo đạc bản đồ địa chính năm 2016 (đơn vị gốc) và biểu rà soát hiện trạng năm 2022, đối chiếu để phân loại từng thửa đất theo 4 trục độc lập.</p>
       </div>
 
@@ -238,7 +238,7 @@
       <div class="help-section">
         <h2>3. Quy trình rà soát 5 bước</h2>
         <ol style="padding-left:20px;font-size:13px;line-height:1.7">
-          <li><strong>Khởi tạo dữ liệu nền:</strong> Nhập 4.146 thửa từ SMK 2016 vào hệ thống (đã hoàn thành).</li>
+          <li><strong>Khởi tạo dữ liệu nền:</strong> Nhập 4.536 thửa từ SMK 2016 vào hệ thống (đã hoàn thành).</li>
           <li><strong>In phiếu QR cho từng thửa:</strong> Cán bộ thôn cầm phiếu xuống địa bàn, quét QR để mở thửa.</li>
           <li><strong>Rà soát thực địa:</strong> Cán bộ cùng hộ đến thực địa, xác minh ranh giới, kê khai chủ SD hiện tại, hiện trạng sử dụng.</li>
           <li><strong>Phân loại + duyệt:</strong> Hệ thống gợi ý phân loại 4 trục dựa trên dữ liệu, cán bộ xã rà lại và duyệt.</li>
@@ -264,6 +264,7 @@
     </div>
 
     <aside class="rightbar" id="rightbar">
+      <button class="bottom-sheet-close" onclick="closeRightbarMobile()">✕</button>
       <div id="thua-detail">
         <div class="thua-detail-empty">
           👆 Click vào một thửa trên bản đồ<br>để xem chi tiết
@@ -272,6 +273,29 @@
     </aside>
   </main>
 </div>
+
+<!-- Sidebar overlay (mobile) -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<!-- Bottom navigation (mobile) -->
+<nav class="mobile-nav" id="mobile-nav">
+  <button class="mobile-nav-btn active" data-view="map">
+    <span class="icon">🗺️</span>
+    <span>Bản đồ</span>
+  </button>
+  <button class="mobile-nav-btn" data-view="table">
+    <span class="icon">📋</span>
+    <span>Tra cứu</span>
+  </button>
+  <button class="mobile-nav-btn" data-view="dashboard">
+    <span class="icon">📊</span>
+    <span>Thống kê</span>
+  </button>
+  <button class="mobile-nav-btn" data-view="help">
+    <span class="icon">ℹ️</span>
+    <span>Hướng dẫn</span>
+  </button>
+</nav>
 
 <!-- Modal sửa phân loại -->
 <div class="modal-bg" id="edit-modal">

@@ -23,7 +23,7 @@ Dữ liệu phân loại 4 trục: kế thừa từ rà soát 2022 (xã Yên Bà
 
 ## Tính năng
 
-- **Bản đồ tương tác** với toàn bộ 4.146 thửa, tô màu theo phân loại đề xuất (bàn giao / giữ lại / cần rà soát)
+- **Bản đồ tương tác** với toàn bộ 4.536 thửa, tô màu theo phân loại đề xuất (bàn giao / giữ lại / cần rà soát)
 - **Hồ sơ số từng thửa**: thông tin SMK 2016, đối chiếu rà soát 2022, phân loại 4 trục A-B-C-D
 - **Bộ lọc đa chiều**: theo thôn, theo Trục A, theo đề xuất xử lý, theo trạng thái kê khai
 - **Tra cứu nhanh**: tìm thửa theo tên chủ sử dụng, sắp xếp, phân trang
@@ -39,7 +39,7 @@ vietmong_app/
 ├── index.html         — Trang chính
 ├── style.css          — Kiểu dáng
 ├── app.js             — Logic ứng dụng
-├── thuadat.geojson    — Dữ liệu 4.146 thửa (~3 MB)
+├── thuadat.geojson    — Dữ liệu 4.536 thửa (~3 MB)
 ├── thongke.json       — File thống kê tóm tắt
 └── README.md          — File này
 ```
@@ -61,8 +61,8 @@ Nếu sau này cần cập nhật:
 
 ## Quy trình rà soát đề xuất
 
-1. **Khởi tạo** (đã làm) — nhập 4.146 thửa SMK 2016 vào hệ thống
-2. **In phiếu QR** — cán bộ in 4.146 phiếu A5 từ giao diện chi tiết thửa
+1. **Khởi tạo** (đã làm) — nhập 4.536 thửa SMK 2016 vào hệ thống
+2. **In phiếu QR** — cán bộ in 4.536 phiếu A5 từ giao diện chi tiết thửa
 3. **Rà soát thực địa** — cán bộ thôn đến từng hộ, cùng đến thực địa, ghi vào phiếu
 4. **Nhập dữ liệu** — cán bộ xã nhập kết quả lên hệ thống (mở thửa, sửa phân loại)
 5. **Xuất biểu** — admin xuất CSV, gộp dữ liệu, sinh Biểu 01-05 cho phương án 181
