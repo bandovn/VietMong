@@ -1,0 +1,66 @@
+{
+  "tong_so_thua": 4146,
+  "tong_dt_ha": 905.5,
+  "theo_xa_thon": [
+    {
+      "xa": "Khác",
+      "thon": "Khác",
+      "so_thua": 7,
+      "dt_m2": 0
+    },
+    {
+      "xa": "Vân Hòa",
+      "thon": "Thôn Việt Hòa",
+      "so_thua": 1210,
+      "dt_m2": 1415256.2
+    },
+    {
+      "xa": "Yên Bài",
+      "thon": "Thôn Bài",
+      "so_thua": 53,
+      "dt_m2": 176223.1
+    },
+    {
+      "xa": "Yên Bài",
+      "thon": "Thôn Muỗi",
+      "so_thua": 919,
+      "dt_m2": 1294092.0
+    },
+    {
+      "xa": "Yên Bài",
+      "thon": "Thôn Phú Yên",
+      "so_thua": 704,
+      "dt_m2": 2775034.4
+    },
+    {
+      "xa": "Yên Bài",
+      "thon": "Thôn Quảng Phúc",
+      "so_thua": 645,
+      "dt_m2": 1206490.5
+    },
+    {
+      "xa": "Yên Bài",
+      "thon": "Thôn Việt Yên",
+      "so_thua": 608,
+      "dt_m2": 2188261.2
+    }
+  ],
+  "theo_truc_a": {
+    "A0_ChuaXacDinh": 2304,
+    "A3_KhoanTrang": 1539,
+    "A1_Khoan": 191,
+    "A5_TuKhaiHoang": 105,
+    "A6_LanChiem": 7
+  },
+  "theo_de_xuat": {
+    "BanGiao_DeXuat": 2713,
+    "CanRaSoatThem": 1130,
+    "GiuLai_TheoPA": 191,
+    "BanGiao_BatBuoc": 112
+  },
+  "theo_trang_thai_ke_khai": {
+    "Không biến động": 2300,
+    "Chưa kê khai": 1442,
+    "Có biến động": 394
+  }
+}

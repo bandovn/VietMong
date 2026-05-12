@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rà soát đất Nông trường Việt Mông</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <div class="logo">VM</div>
+    <div>
+      <div class="title">Rà soát đất Nông trường Việt Mông</div>
+      <div class="subtitle">UBND xã Yên Bài • Phương án theo Điều 181 Luật ĐĐ 2024</div>
+    </div>
+    <div class="spacer"></div>
+    <button class="nav-btn active" data-view="map">Bản đồ</button>
+    <button class="nav-btn" data-view="table">Tra cứu</button>
+    <button class="nav-btn" data-view="dashboard">Thống kê</button>
+    <button class="nav-btn" data-view="help">Hướng dẫn</button>
+  </header>
+
+  <main class="main">
+    <aside class="sidebar" id="sidebar">
+      <div class="search-box">
+        <input type="text" id="search-input" placeholder="Tìm thửa, chủ SD...">
+      </div>
+
+      <div class="filter-group">
+        <div class="section-title">Đề xuất xử lý</div>
+        <label class="filter-row">
+          <input type="checkbox" data-filter="de_xuat" value="BanGiao_BatBuoc" checked>
+          <span class="swatch" style="background:#F7C1C1;border:0.5px solid #791F1F"></span>
+          <span>Bàn giao bắt buộc</span>
+          <span class="count" data-count="dx-BanGiao_BatBuoc">—</span>
+        </label>
+        <label class="filter-row">
+          <input type="checkbox" data-filter="de_xuat" value="BanGiao_DeXuat" checked>
+          <span class="swatch" style="background:#F5C4B3;border:0.5px solid #993C1D"></span>
+          <span>Bàn giao đề xuất</span>
+          <span class="count" data-count="dx-BanGiao_DeXuat">—</span>
+        </label>
+        <label class="filter-row">
+          <input type="checkbox" data-filter="de_xuat" value="GiuLai_TheoPA" checked>
+          <span class="swatch" style="background:#9FE1CB;border:0.5px solid #0F6E56"></span>
+          <span>Giữ lại theo PA</span>
+          <span class="count" data-count="dx-GiuLai_TheoPA">—</span>
+        </label>
+        <label class="filter-row">
+          <input type="checkbox" data-filter="de_xuat" value="GiuLai_TheoHD" checked>
+          <span class="swatch" style="background:#C0DD97;border:0.5px solid #3B6D11"></span>
+          <span>Giữ lại theo HĐ</span>
+          <span class="count" data-count="dx-GiuLai_TheoHD">—</span>
+        </label>
+        <label class="filter-row">
+          <input type="checkbox" data-filter="de_xuat" value="CanRaSoatThem" checked>
+          <span class="swatch" style="background:#FAC775;border:0.5px solid #854F0B"></span>
+          <span>Cần rà soát thêm</span>
+          <span class="count" data-count="dx-CanRaSoatThem">—</span>
+        </label>
+        <label class="filter-row">
+          <input type="checkbox" data-filter="de_xuat" value="TamDung_TranhChap" checked>
+          <span class="swatch" style="background:#F4C0D1;border:0.5px solid #993556"></span>
+          <span>Tạm dừng (tranh chấp)</span>
+          <span class="count" data-count="dx-TamDung_TranhChap">—</span>
+        </label>
+      </div>
+
+      <div class="filter-group">
+        <div class="section-title">Theo thôn</div>
+        <div id="filter-thon"></div>
+      </div>
+
+      <div class="filter-group">
+        <div class="section-title">Trục A — Quan hệ pháp lý</div>
+        <div id="filter-truc-a"></div>
+      </div>
+
+      <div class="filter-group">
+        <div class="section-title">Trạng thái kê khai</div>
+        <div id="filter-ke-khai"></div>
+      </div>
+    </aside>
+
+    <div class="map-area" id="view-map">
+      <div id="map"></div>
+      <div class="loading" id="map-loading">Đang tải 4.146 thửa đất...</div>
+
+      <div class="map-overlay-tr">
+        <div><strong id="visible-count">—</strong> thửa hiển thị</div>
+        <div style="color:var(--text-secondary);margin-top:2px">trên tổng <strong id="total-count">—</strong></div>
+      </div>
+
+      <div class="map-overlay-bl">
+        <div style="font-weight:500;margin-bottom:4px">Chú giải đề xuất</div>
+        <div class="legend-row"><span class="swatch" style="background:#F7C1C1;border:0.5px solid #791F1F"></span>Bàn giao bắt buộc</div>
+        <div class="legend-row"><span class="swatch" style="background:#F5C4B3;border:0.5px solid #993C1D"></span>Bàn giao đề xuất</div>
+        <div class="legend-row"><span class="swatch" style="background:#9FE1CB;border:0.5px solid #0F6E56"></span>Giữ lại theo PA</div>
+        <div class="legend-row"><span class="swatch" style="background:#FAC775;border:0.5px solid #854F0B"></span>Cần rà soát thêm</div>
+      </div>
+    </div>
+
+    <div class="view-table hidden" id="view-table">
+      <div class="table-controls">
+        <input type="text" id="table-search" placeholder="Tìm tên chủ SD..." style="flex:1;min-width:200px">
+        <select id="table-xa">
+          <option value="">Tất cả xã</option>
+        </select>
+        <select id="table-dx">
+          <option value="">Tất cả đề xuất</option>
+        </select>
+        <button class="btn" onclick="exportFilteredCsv()">⬇ Xuất CSV</button>
+      </div>
+      <div class="thua-table" id="thua-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th data-sort="xa">Xã</th>
+              <th data-sort="thon">Thôn</th>
+              <th data-sort="to_bd">Tờ</th>
+              <th data-sort="thua">Thửa</th>
+              <th data-sort="chu_sd_2016">Chủ SD 2016</th>
+              <th data-sort="loai_dat_2016">Loại đất</th>
+              <th data-sort="dt_2016" class="num">DT (m²)</th>
+              <th data-sort="truc_a_text">Trục A</th>
+              <th data-sort="de_xuat_text">Đề xuất</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+        <div class="pagination" id="pagination"></div>
+      </div>
+    </div>
+
+    <div class="view-dashboard hidden" id="view-dashboard">
+      <h1 style="font-size:18px;font-weight:500;margin-bottom:16px">Thống kê tổng quan</h1>
+
+      <div class="dashboard-grid">
+        <div class="dashboard-card">
+          <div class="label">Tổng số thửa</div>
+          <div class="value" id="stat-total">—</div>
+          <div class="delta">Theo bản đồ đo đạc 2016</div>
+        </div>
+        <div class="dashboard-card">
+          <div class="label">Tổng diện tích</div>
+          <div class="value" id="stat-area">— ha</div>
+          <div class="delta">9.055.357 m² đã đo đạc</div>
+        </div>
+        <div class="dashboard-card">
+          <div class="label">Đề xuất bàn giao</div>
+          <div class="value" id="stat-bg" style="color:var(--danger)">— thửa</div>
+          <div class="delta" id="stat-bg-ha">— ha</div>
+        </div>
+        <div class="dashboard-card">
+          <div class="label">Đề xuất giữ lại</div>
+          <div class="value" id="stat-gl" style="color:var(--accent)">— thửa</div>
+          <div class="delta" id="stat-gl-ha">— ha</div>
+        </div>
+        <div class="dashboard-card">
+          <div class="label">Cần rà soát thêm</div>
+          <div class="value" id="stat-rs" style="color:var(--warning)">— thửa</div>
+          <div class="delta">Chưa phân định được</div>
+        </div>
+        <div class="dashboard-card">
+          <div class="label">Đã rà soát thực địa</div>
+          <div class="value" id="stat-progress">0%</div>
+          <div class="delta">Cập nhật bởi cán bộ</div>
+        </div>
+      </div>
+
+      <div class="dashboard-section">
+        <h2>Phân bổ theo thôn</h2>
+        <table class="simple" id="table-by-thon">
+          <thead><tr><th>Xã</th><th>Thôn</th><th class="num">Số thửa</th><th class="num">Diện tích (ha)</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="dashboard-section">
+        <h2>Trục A — Quan hệ pháp lý</h2>
+        <div id="chart-truc-a"></div>
+      </div>
+
+      <div class="dashboard-section">
+        <h2>Trạng thái kê khai (rà soát 2022)</h2>
+        <div id="chart-ke-khai"></div>
+      </div>
+
+      <div class="notice">
+        <strong>Lưu ý:</strong> Đây là số liệu sơ bộ phân loại tự động từ dữ liệu rà soát 2022.
+        Cần rà soát thực địa và cán bộ xã duyệt cuối để có số liệu chính thức cho phương án theo Điều 181.
+      </div>
+    </div>
+
+    <div class="view-help hidden" id="view-help">
+      <h1 style="font-size:20px;font-weight:500;margin-bottom:16px">Hướng dẫn sử dụng</h1>
+
+      <div class="help-section">
+        <h2>1. Mục đích hệ thống</h2>
+        <p>Hệ thống hỗ trợ rà soát toàn diện 4.146 thửa đất thuộc diện tích Nông trường Việt Mông tại huyện Ba Vì, phục vụ lập phương án bàn giao và sử dụng đất theo Điều 181 Luật Đất đai 2024 (NĐ 03/2024/NĐ-CP).</p>
+        <p>Hệ thống kế thừa kết quả đo đạc bản đồ địa chính năm 2016 (đơn vị gốc) và biểu rà soát hiện trạng năm 2022, đối chiếu để phân loại từng thửa đất theo 4 trục độc lập.</p>
+      </div>
+
+      <div class="help-section">
+        <h2>2. Hệ thống 4 trục phân loại</h2>
+        <h3>Trục A — Quan hệ pháp lý với Công ty</h3>
+        <ul>
+          <li><strong>A1 — Khoán theo NĐ 01/135/168:</strong> Có HĐ khoán đầy đủ, còn hiệu lực, đúng đối tượng.</li>
+          <li><strong>A3 — Khoán trắng:</strong> Hộ sử dụng nhưng không có HĐ hoặc HĐ hết hiệu lực, Cty không thu sản phẩm.</li>
+          <li><strong>A4 — Cho thuê / LDLK:</strong> Có HĐ kinh tế với tổ chức / cá nhân.</li>
+          <li><strong>A5 — Tự khai hoang:</strong> Hộ tự khai hoang trên đất Cty quản lý.</li>
+          <li><strong>A6 — Bị lấn, bị chiếm:</strong> Đất Cty bị tổ chức / cá nhân khác lấn chiếm trái phép.</li>
+          <li><strong>A7 — Đang tranh chấp:</strong> Có đơn thư khiếu nại, biên bản hòa giải chưa thành.</li>
+        </ul>
+        <h3>Trục B — Hiện trạng vs mục đích</h3>
+        <ul>
+          <li><strong>B1 — Đúng mục đích:</strong> SD đúng loại đất được giao.</li>
+          <li><strong>B2 — Không đúng mục đích:</strong> Đất NN nhưng đã làm nhà / kinh doanh.</li>
+          <li><strong>B3 — Không sử dụng:</strong> Bỏ hoang.</li>
+        </ul>
+        <h3>Trục C — Chủ sử dụng đất</h3>
+        <ul>
+          <li><strong>C1 — Không đổi CSD:</strong> Trùng với chủ SD 2016.</li>
+          <li><strong>C2 — Đã đổi CSD:</strong> Đã chuyển nhượng / tặng cho / thừa kế.</li>
+          <li><strong>C3 — Chưa xác định CSD:</strong> Không liên hệ được chủ SD.</li>
+        </ul>
+        <h3>Trục D — Biến động ranh giới thửa</h3>
+        <ul>
+          <li><strong>D1 — Không biến động:</strong> 1 thửa 2016 = 1 thửa 2022.</li>
+          <li><strong>D2 — Bị tách:</strong> 1 thửa mẹ → nhiều thửa con.</li>
+          <li><strong>D3 — Bị gộp:</strong> Nhiều thửa mẹ → 1 thửa con.</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h2>3. Quy trình rà soát 5 bước</h2>
+        <ol style="padding-left:20px;font-size:13px;line-height:1.7">
+          <li><strong>Khởi tạo dữ liệu nền:</strong> Nhập 4.146 thửa từ SMK 2016 vào hệ thống (đã hoàn thành).</li>
+          <li><strong>In phiếu QR cho từng thửa:</strong> Cán bộ thôn cầm phiếu xuống địa bàn, quét QR để mở thửa.</li>
+          <li><strong>Rà soát thực địa:</strong> Cán bộ cùng hộ đến thực địa, xác minh ranh giới, kê khai chủ SD hiện tại, hiện trạng sử dụng.</li>
+          <li><strong>Phân loại + duyệt:</strong> Hệ thống gợi ý phân loại 4 trục dựa trên dữ liệu, cán bộ xã rà lại và duyệt.</li>
+          <li><strong>Xuất biểu:</strong> Tự động sinh Biểu 01–05 + thuyết minh + bản đồ khoanh màu.</li>
+        </ol>
+      </div>
+
+      <div class="help-section">
+        <h2>4. Sử dụng hệ thống</h2>
+        <ul>
+          <li><strong>Bản đồ:</strong> Click vào thửa để xem chi tiết. Dùng bộ lọc bên trái để xem theo nhóm.</li>
+          <li><strong>Tra cứu:</strong> Tìm kiếm thửa theo tên chủ SD, lọc theo xã/đề xuất.</li>
+          <li><strong>Thống kê:</strong> Xem tổng quan, phân bổ theo thôn, theo Trục A.</li>
+          <li><strong>Sửa phân loại:</strong> Mở chi tiết thửa → nhấn "Sửa phân loại". Thay đổi được lưu trong trình duyệt (localStorage) và xuất ra file JSON để admin gộp.</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h2>5. Lưu ý về phiên bản tĩnh</h2>
+        <p>Phiên bản này chạy trên GitHub Pages, không có máy chủ và cơ sở dữ liệu tập trung. Mọi thay đổi rà soát của cán bộ được lưu cục bộ trong trình duyệt và phải xuất ra file JSON để gộp về.</p>
+        <p>Phiên bản đầy đủ (có hộ dân tự kê khai online, đồng bộ giữa các cán bộ, kho ảnh thực địa) yêu cầu hạ tầng máy chủ. Phương án triển khai chi tiết xem trong báo cáo kèm theo.</p>
+      </div>
+    </div>
+
+    <aside class="rightbar" id="rightbar">
+      <div id="thua-detail">
+        <div class="thua-detail-empty">
+          👆 Click vào một thửa trên bản đồ<br>để xem chi tiết
+        </div>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<!-- Modal sửa phân loại -->
+<div class="modal-bg" id="edit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="title">Sửa phân loại thửa <span id="edit-thua-id"></span></div>
+      <button class="close" onclick="closeEditModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Trục A — Quan hệ pháp lý</label>
+          <select id="edit-truc-a">
+            <option value="A0_ChuaXacDinh">A0 — Chưa xác định</option>
+            <option value="A1_Khoan">A1 — Khoán theo NĐ 01/135/168</option>
+            <option value="A3_KhoanTrang">A3 — Khoán trắng</option>
+            <option value="A4_ChoThue_LDLK">A4 — Cho thuê / LDLK</option>
+            <option value="A5_TuKhaiHoang">A5 — Tự khai hoang</option>
+            <option value="A6_LanChiem">A6 — Bị lấn, bị chiếm</option>
+            <option value="A7_TranhChap">A7 — Đang tranh chấp</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Trục B — Hiện trạng vs mục đích</label>
+          <select id="edit-truc-b">
+            <option value="B0_KhongRo">B0 — Không rõ</option>
+            <option value="B1_DungMD">B1 — Đúng mục đích</option>
+            <option value="B2_KhongDungMD">B2 — Không đúng mục đích</option>
+            <option value="B3_KhongSD">B3 — Không sử dụng</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Trục C — Chủ sử dụng</label>
+          <select id="edit-truc-c">
+            <option value="C0_KhongRo">C0 — Không rõ</option>
+            <option value="C1_KhongDoiCSD">C1 — Không đổi CSD</option>
+            <option value="C2_DaDoiCSD">C2 — Đã đổi CSD</option>
+            <option value="C3_ChuaXacDinhCSD">C3 — Chưa xác định CSD</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Đề xuất xử lý</label>
+          <select id="edit-de-xuat">
+            <option value="BanGiao_BatBuoc">Bàn giao bắt buộc</option>
+            <option value="BanGiao_DeXuat">Bàn giao đề xuất</option>
+            <option value="GiuLai_TheoPA">Giữ lại theo PA</option>
+            <option value="GiuLai_TheoHD">Giữ lại theo HĐ</option>
+            <option value="CanRaSoatThem">Cần rà soát thêm</option>
+            <option value="TamDung_TranhChap">Tạm dừng (tranh chấp)</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Chủ sử dụng hiện tại</label>
+        <input type="text" id="edit-chu-sd-2022" placeholder="Họ tên chủ sử dụng đất hiện tại">
+      </div>
+      <div class="form-group">
+        <label>Ghi chú rà soát (lý do thay đổi phân loại, kết quả thực địa...)</label>
+        <textarea id="edit-ghi-chu" rows="3" style="resize:vertical"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Người rà soát</label>
+          <input type="text" id="edit-nguoi-ra-soat" placeholder="Họ tên cán bộ">
+        </div>
+        <div class="form-group">
+          <label>Ngày rà soát</label>
+          <input type="date" id="edit-ngay-ra-soat">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeEditModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="saveEditClassification()">💾 Lưu</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
